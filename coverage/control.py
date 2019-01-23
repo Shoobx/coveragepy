@@ -707,6 +707,7 @@ class Coverage(object):
         self, morfs=None, show_missing=None, ignore_errors=None,
         file=None,                  # pylint: disable=redefined-builtin
         omit=None, include=None, skip_covered=None,
+        contexts=None,
     ):
         """Write a textual summary report to `file`.
 
@@ -735,6 +736,7 @@ class Coverage(object):
         self.config.from_args(
             ignore_errors=ignore_errors, report_omit=omit, report_include=include,
             show_missing=show_missing, skip_covered=skip_covered,
+            query_contexts=contexts,
             )
         reporter = SummaryReporter(self, self.config)
         return reporter.report(morfs, outfile=file)
