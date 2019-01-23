@@ -154,9 +154,9 @@ class DynamicContextTest(CoverageTest):
         full_names = {os.path.basename(f): f for f in data.measured_files()}
         fname = full_names["two_tests.py"]
         self.assertCountEqual(data.measured_contexts(), ["", "test_one", "test_two"])
-        self.assertCountEqual(data.lines(fname, ""), self.OUTER_LINES)
-        self.assertCountEqual(data.lines(fname, "test_one"), self.TEST_ONE_LINES)
-        self.assertCountEqual(data.lines(fname, "test_two"), self.TEST_TWO_LINES)
+        self.assertCountEqual(data.lines(fname, [""]), self.OUTER_LINES)
+        self.assertCountEqual(data.lines(fname, ["test_one"]), self.TEST_ONE_LINES)
+        self.assertCountEqual(data.lines(fname, ["test_two"]), self.TEST_TWO_LINES)
 
     def test_static_and_dynamic(self):
         self.make_file("two_tests.py", self.SOURCE)
@@ -168,9 +168,9 @@ class DynamicContextTest(CoverageTest):
         full_names = {os.path.basename(f): f for f in data.measured_files()}
         fname = full_names["two_tests.py"]
         self.assertCountEqual(data.measured_contexts(), ["stat", "stat:test_one", "stat:test_two"])
-        self.assertCountEqual(data.lines(fname, "stat"), self.OUTER_LINES)
-        self.assertCountEqual(data.lines(fname, "stat:test_one"), self.TEST_ONE_LINES)
-        self.assertCountEqual(data.lines(fname, "stat:test_two"), self.TEST_TWO_LINES)
+        self.assertCountEqual(data.lines(fname, ["stat"]), self.OUTER_LINES)
+        self.assertCountEqual(data.lines(fname, ["stat:test_one"]), self.TEST_ONE_LINES)
+        self.assertCountEqual(data.lines(fname, ["stat:test_two"]), self.TEST_TWO_LINES)
 
 
 class DynamicContextWithPythonTracerTest(CoverageTest):
