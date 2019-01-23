@@ -32,15 +32,15 @@ def qualname_from_frame(frame):
         return fname
 
     if hasattr(func, '__qualname__'):
-        qname = func.__qualname__
+        qname = func.__module__ + '.' + func.__qualname__
     else:
         for cls in self.__class__.__mro__:
             f = cls.__dict__.get(fname, None)
             if f is None:
                 continue
             if f is func:
-                qname = cls.__name__ + "." + fname
+                qname = cls.__module__ + '.' + cls.__name__ + "." + fname
                 break
         else:
-            qname = fname
+            qname = func.__module__ + '.' + fname
     return qname
