@@ -237,13 +237,13 @@ class QualnameTest(CoverageTest):
     run_in_temp_dir = False
 
     def test_method(self):
-        self.assertEqual(Parent().meth(), "Parent.meth")
+        self.assertEqual(Parent().meth(), "tests.test_context.Parent.meth")
 
     def test_inherited_method(self):
-        self.assertEqual(Child().meth(), "Parent.meth")
+        self.assertEqual(Child().meth(), "tests.test_context.Parent.meth")
 
     def test_mi_inherited_method(self):
-        self.assertEqual(MultiChild().meth(), "Parent.meth")
+        self.assertEqual(MultiChild().meth(), "tests.test_context.Parent.meth")
 
     def test_no_arguments(self):
         self.assertEqual(no_arguments(), "no_arguments")
