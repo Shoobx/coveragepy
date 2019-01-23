@@ -743,7 +743,7 @@ class Coverage(object):
 
     def annotate(
         self, morfs=None, directory=None, ignore_errors=None,
-        omit=None, include=None,
+        omit=None, include=None, contexts=None,
     ):
         """Annotate a list of modules.
 
@@ -756,14 +756,15 @@ class Coverage(object):
 
         """
         self.config.from_args(
-            ignore_errors=ignore_errors, report_omit=omit, report_include=include
+            ignore_errors=ignore_errors, report_omit=omit,
+            report_include=include, query_contexts=contexts,
             )
         reporter = AnnotateReporter(self, self.config)
         reporter.report(morfs, directory=directory)
 
     def html_report(self, morfs=None, directory=None, ignore_errors=None,
                     omit=None, include=None, extra_css=None, title=None,
-                    skip_covered=None):
+                    skip_covered=None, contexts=None):
         """Generate an HTML report.
 
         The HTML is written to `directory`.  The file "index.html" is the
@@ -784,14 +785,14 @@ class Coverage(object):
         self.config.from_args(
             ignore_errors=ignore_errors, report_omit=omit, report_include=include,
             html_dir=directory, extra_css=extra_css, html_title=title,
-            skip_covered=skip_covered,
+            skip_covered=skip_covered, query_contexts=contexts,
             )
         reporter = HtmlReporter(self, self.config)
         return reporter.report(morfs)
 
     def xml_report(
         self, morfs=None, outfile=None, ignore_errors=None,
-        omit=None, include=None,
+        omit=None, include=None, contexts=None,
     ):
         """Generate an XML report of coverage results.
 
@@ -807,7 +808,7 @@ class Coverage(object):
         """
         self.config.from_args(
             ignore_errors=ignore_errors, report_omit=omit, report_include=include,
-            xml_output=outfile,
+            xml_output=outfile, query_contexts=contexts,
             )
         file_to_close = None
         delete_file = False
