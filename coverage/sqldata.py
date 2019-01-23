@@ -351,11 +351,11 @@ class CoverageSqliteData(SimpleReprMixin):
                 for context in other_data.measured_contexts():
                     self.set_context(context)
                     for filename in other_data.measured_files():
-                        lines = set(other_data.lines(filename, context=context))
+                        lines = set(other_data.lines(filename, contexts=[context]))
                         if lines:
                             other_files.add(filename)
                             filename = aliases.map(filename)
-                            lines.update(self.lines(filename, context=context) or ())
+                            lines.update(self.lines(filename, contexts=[context]) or ())
                             self.add_lines({filename: lines})
 
             # arcs
@@ -363,11 +363,11 @@ class CoverageSqliteData(SimpleReprMixin):
                 for context in other_data.measured_contexts():
                     self.set_context(context)
                     for filename in other_data.measured_files():
-                        arcs = set(other_data.arcs(filename, context=context))
+                        arcs = set(other_data.arcs(filename, contexts=[context]))
                         if arcs:
                             other_files.add(filename)
                             filename = aliases.map(filename)
-                            arcs.update(self.arcs(filename, context=context) or ())
+                            arcs.update(self.arcs(filename, contexts=[context]) or ())
                             self.add_arcs({filename: arcs})
 
             # file_tracers
@@ -472,10 +472,10 @@ class CoverageSqliteData(SimpleReprMixin):
             with self._connect() as con:
                 # Context entries can be globs, so convert '*' with '%'.
                 context_selectors = [context.replace('*', '%') for context in contexts]
-                context_clause = ' or '.join(['contenxt like ?']*len(contexts))
-                con.execute(
+                context_clause = ' or '.join(['context like ?']*len(contexts))
+                cur = con.execute(
                     "select id from context where " + context_clause, context_selectors)
-                return [row[0] for row in con.fetchall()]
+                return [row[0] for row in cur.fetchall()]
         elif self._query_contexts is not None:
             return self._query_context_ids
         return None
@@ -483,7 +483,7 @@ class CoverageSqliteData(SimpleReprMixin):
     def lines(self, filename, contexts=None):
         self._start_using()
         if self.has_arcs():
-            arcs = self.arcs(filename, context=context)
+            arcs = self.arcs(filename, contexts=contexts)
             if arcs is not None:
                 all_lines = itertools.chain.from_iterable(arcs)
                 return list(set(l for l in all_lines if l > 0))
@@ -497,8 +497,9 @@ class CoverageSqliteData(SimpleReprMixin):
                 data = [file_id]
                 context_ids = self._get_query_context_ids(contexts)
                 if context_ids is not None:
-                    query += " and context_id IN ?"
-                    data += [context_ids]
+                    ids_array = ', '.join('?'*len(context_ids))
+                    query += " and context_id in (" + ids_array + ")"
+                    data += context_ids
                 linenos = con.execute(query, data)
                 return [lineno for lineno, in linenos]
 
@@ -513,8 +514,9 @@ class CoverageSqliteData(SimpleReprMixin):
                 data = [file_id]
                 context_ids = self._get_query_context_ids(contexts)
                 if context_ids is not None:
-                    query += " and context_id IN ?"
-                    data += [context_ids]
+                    ids_array = ', '.join('?'*len(context_ids))
+                    query += " and context_id in (" + ids_array + ")"
+                    data += context_ids
                 arcs = con.execute(query, data)
                 return list(arcs)
 
