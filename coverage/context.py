@@ -5,7 +5,8 @@
 
 def should_start_context_test_function(frame):
     """Is this frame calling a test_* function?"""
-    if frame.f_code.co_name.startswith("test"):
+    co_name = frame.f_code.co_name
+    if co_name.startswith("test") or co_name == "runTest":
         return qualname_from_frame(frame)
     return None
 
