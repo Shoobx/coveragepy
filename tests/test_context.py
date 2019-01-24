@@ -225,6 +225,9 @@ class SomethingElse(object):                    # pylint: disable=missing-docstr
 class MultiChild(SomethingElse, Child):         # pylint: disable=missing-docstring
     pass
 
+class SpecialChild(Parent):                     # pylint: disable=missing-docstring
+    __coverage_context__ = 'special'
+
 def no_arguments():                     # pylint: disable=missing-docstring
     return get_qualname()
 
@@ -272,3 +275,6 @@ class QualnameTest(CoverageTest):
         c = Child()
         c.meth = patch_meth
         self.assertEqual(c.meth(c), "tests.test_context.patch_meth")
+
+    def test_provided_context(self):
+        self.assertEqual(SpecialChild().meth(), "special.meth")

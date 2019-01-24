@@ -35,6 +35,9 @@ def qualname_from_frame(frame):
         cls = self.__class__
         return cls.__module__ + '.' + cls.__name__ + "." + fname
 
+    if hasattr(self.__class__, '__coverage_context__'):
+        return self.__class__.__coverage_context__ + '.' + fname
+
     if hasattr(func, '__qualname__'):
         qname = func.__module__ + '.' + func.__qualname__
     else:
