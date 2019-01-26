@@ -437,7 +437,6 @@ class CoverageSqliteData(SimpleReprMixin):
                 other_tracer = tracers.get(path, '')
                 # If there is no tracer, there is always the None tracer.
                 if this_tracer is not None and this_tracer != other_tracer:
->>>>>>> fast-sqldata-update
                     raise CoverageException(
                         "Conflicting file tracer name for '%s': %r vs %r" % (
                             path, this_tracer, other_tracer))
