@@ -345,7 +345,6 @@ class CoverageSqliteData(SimpleReprMixin):
 
         # Force the database we're writing to to exist before we start nesting
         # contexts.
-        self.read()
         self._start_using()
 
         # Collector for all arcs, lines and tracers
@@ -353,7 +352,7 @@ class CoverageSqliteData(SimpleReprMixin):
         contexts = []
         arcs = []
         lines = []
-        tracers = []
+        tracers = {}
         other_data.read()
         with other_data._connect() as conn:
             # Get files data.
@@ -393,22 +392,26 @@ class CoverageSqliteData(SimpleReprMixin):
                 'select file.path, tracer '
                 'from tracer '
                 'inner join file on file.id = tracer.file_id')
-            tracers.extend(
+            tracers.update(dict(
                 (aliases.map(path), tracer)
-                for (path, tracer) in cur)
+                for (path, tracer) in cur))
             cur.close()
-
-        # Prepare tracers and fail, if a conflict is found.
-        tracer_map = {}
-        for filename, tracer in tracers:
-            if filename in tracer_map and tracer_map[filename] != tracer:
-                raise CoverageException(
-                    "Conflicting file tracer name for '%s': %r vs %r" % (
-                        filename, tracer_map[filename], tracer))
-            tracer_map[filename] = tracer
 
         with self._connect() as conn:
             conn.isolation_level = 'IMMEDIATE'
+
+            # Get all tracers in the DB. Files not in the tracers are assumed
+            # to have an empty string tracer. Since Sqlite does not support
+            # full outer joins, we have to make two queries to fill the
+            # dictionary.
+            this_tracers = {
+                path: ''
+                for path, in conn.execute('select path from file')}
+            this_tracers.update({
+                aliases.map(path): tracer
+                for path, tracer in conn.execute(
+                        'select file.path, tracer from tracer '
+                        'inner join file on file.id = tracer.file_id')})
 
             # Create all file and context rows in the DB.
             conn.executemany(
@@ -422,17 +425,34 @@ class CoverageSqliteData(SimpleReprMixin):
                 ((context,) for context in contexts))
             context_ids = {
                 context: id
-                for id, context in conn.execute('select id, context from context')}
+                for id, context in conn.execute(
+                        'select id, context from context')}
+
+            # Prepare tracers and fail, if a conflict is found.
+            # tracer_paths is used to ensure consistency over the tracer data
+            # and tracer_map tracks the tracers to be inserted.
+            tracer_map = {}
+            for path in files:
+                this_tracer = this_tracers.get(path)
+                other_tracer = tracers.get(path, '')
+                # If there is no tracer, there is always the None tracer.
+                if this_tracer is not None and this_tracer != other_tracer:
+                    raise CoverageException(
+                        "Conflicting file tracer name for '%s': %r vs %r" % (
+                            path, this_tracer, other_tracer))
+                tracer_map[path] = other_tracer
 
             # Prepare arc and line rows to be inserted by converting the file
             # and context strings with integer ids. Then use the efficient
             # `executemany()` to insert all rows at once.
-            arc_rows = (
+            arc_rows = list(
                 (file_ids[file], context_ids[context], fromno, tono)
                 for file, context, fromno, tono in arcs)
-            line_rows = (
+            line_rows = list(
                 (file_ids[file], context_ids[context], lineno)
                 for file, context, lineno in lines)
+
+            self._choose_lines_or_arcs(arcs=bool(arcs), lines=bool(lines))
 
             conn.executemany(
                 'insert or ignore into arc '
@@ -445,12 +465,13 @@ class CoverageSqliteData(SimpleReprMixin):
                 ((file_ids[file], context_ids[context], lineno)
                  for file, context, lineno in lines))
             conn.executemany(
-                'insert into tracer (file_id, tracer) values (?, ?)',
+                'insert or ignore into tracer (file_id, tracer) values (?, ?)',
                 ((file_ids[filename], tracer)
                  for filename, tracer in tracer_map.items()))
 
         # Update all internal cache data.
-        self._open_db()
+        self._reset()
+        self.read()
 
     def erase(self, parallel=False):
         """Erase the data in this object.
