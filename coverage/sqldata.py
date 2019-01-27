@@ -587,7 +587,7 @@ class CoverageSqliteData(SimpleReprMixin):
             if file_id is None:
                 return None
             else:
-                query = "select lineno from line where file_id = ?"
+                query = "select distinct lineno from line where file_id = ?"
                 data = [file_id]
                 context_ids = self._get_query_context_ids(contexts)
                 if context_ids is not None:
@@ -604,7 +604,7 @@ class CoverageSqliteData(SimpleReprMixin):
             if file_id is None:
                 return None
             else:
-                query = "select fromno, tono from arc where file_id = ?"
+                query = "select distinct fromno, tono from arc where file_id = ?"
                 data = [file_id]
                 context_ids = self._get_query_context_ids(contexts)
                 if context_ids is not None:
